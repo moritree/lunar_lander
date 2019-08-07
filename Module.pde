@@ -1,4 +1,9 @@
 class Module {
+  // Size as coefficient of 100% (used for when crashing)
+  float size = 1;
+  
+  int timer = 0;
+  
   // Initial fuel amount
   int fuel = 200;
   
@@ -74,72 +79,88 @@ class Module {
   * Update the module's location and orientation according to physical rules
   */
   void update() {
-    this.ang += this.angVel;
-    
-    // Update velocity (due to gravity)
-    this.vel[1] += gravity;
-    
-    // Update position
-    this.pos[0] += this.vel[0];
-    this.pos[1] += this.vel[1];
-    
-    // Collision detection for each of 8 points
-    float[] BL = posRotated(collision[3]);
-    float[] BM = posRotated(new float[] {(collision[3][0] + collision[2][0])/2, collision[3][1]});
-    float[] BR = posRotated(collision[2]);
-    float[] ML = posRotated(new float[] {collision[3][0], (collision[3][1] + collision[0][1])/2});
-    float[] MR = posRotated(new float[] {collision[2][0], (collision[2][1] + collision[1][1])/2});
-    float[] TL = posRotated(collision[0]);
-    float[] TM = posRotated(new float[] {(collision[0][0] + collision[1][0])/2, collision[0][1]});
-    float[] TR = posRotated(collision[1]);
-    for (Terrain t : terrain) {
-      boolean collide = false;
-      boolean vert = false;
-      boolean horiz = false;
+    if (mode == GameMode.PLAY) {
+      this.ang += this.angVel;
       
-      if (t.isWithin(BM[0] + pos[0], BM[1] + pos[1]) || t.isWithin(TM[0] + pos[0], TM[1] + pos[1])) { 
-        if (DEBUG) println("Collision: Top/Bottom");
-        vert = true;
-        collide = true;
-      }
-      if (t.isWithin(ML[0] + pos[0], ML[1] + pos[1]) || t.isWithin(MR[0] + pos[0], MR[1] + pos[1])) { 
-        if (DEBUG) println("Collision: Left/Right");
-        horiz = true;
-        collide = true;
-      }
-      if (t.isWithin(BR[0] + pos[0], BR[1] + pos[1]) || t.isWithin(BL[0] + pos[0], BL[1] + pos[1])
-          || t.isWithin(TR[0] + pos[0], TR[1] + pos[1]) || t.isWithin(TL[0] + pos[0], TL[1] + pos[1])) { 
-        if (DEBUG) println("Collision: CORNER");
-        horiz = true;
-        vert = true;
-        collide = true;
-      }
+      // Update velocity (due to gravity)
+      this.vel[1] += gravity;
       
-      // Check whether this collision is a safe landing or crash
-      if (collide) { 
-        this.angVel = 0;
-        if (this.vel[1] < 10 && Math.abs(ang) < Math.PI / 8) {
-          land();
-        } else crash();
-      }
+      // Update position
+      this.pos[0] += this.vel[0];
+      this.pos[1] += this.vel[1];
       
-      if (vert) {
-        this.pos[1] -= this.vel[1];
-        this.vel[1] = 0;
+      // Collision detection for each of 8 points
+      float[] BL = posRotated(collision[3]);
+      float[] BM = posRotated(new float[] {(collision[3][0] + collision[2][0])/2, collision[3][1]});
+      float[] BR = posRotated(collision[2]);
+      float[] ML = posRotated(new float[] {collision[3][0], (collision[3][1] + collision[0][1])/2});
+      float[] MR = posRotated(new float[] {collision[2][0], (collision[2][1] + collision[1][1])/2});
+      float[] TL = posRotated(collision[0]);
+      float[] TM = posRotated(new float[] {(collision[0][0] + collision[1][0])/2, collision[0][1]});
+      float[] TR = posRotated(collision[1]);
+      for (Terrain t : terrain) {
+        boolean collide = false;
+        boolean vert = false;
+        boolean horiz = false;
+        
+        if (t.isWithin(BM[0] + pos[0], BM[1] + pos[1]) || t.isWithin(TM[0] + pos[0], TM[1] + pos[1])) { 
+          if (DEBUG) println("Collision: Top/Bottom");
+          vert = true;
+          collide = true;
+        }
+        if (t.isWithin(ML[0] + pos[0], ML[1] + pos[1]) || t.isWithin(MR[0] + pos[0], MR[1] + pos[1])) { 
+          if (DEBUG) println("Collision: Left/Right");
+          horiz = true;
+          collide = true;
+        }
+        if (t.isWithin(BR[0] + pos[0], BR[1] + pos[1]) || t.isWithin(BL[0] + pos[0], BL[1] + pos[1])
+            || t.isWithin(TR[0] + pos[0], TR[1] + pos[1]) || t.isWithin(TL[0] + pos[0], TL[1] + pos[1])) { 
+          if (DEBUG) println("Collision: CORNER");
+          horiz = true;
+          vert = true;
+          collide = true;
+        }
+        
+        // Check whether this collision is a safe landing or crash
+        if (collide) { 
+          this.angVel = 0;
+          if (this.vel[1] < 10 && Math.abs(ang) < Math.PI / 8) {
+            land();
+          } else crash();
+        }
+        
+        if (vert) {
+          this.pos[1] -= this.vel[1];
+          this.vel[1] = 0;
+        }
+        
+        if (horiz) {
+          this.pos[0] -= this.vel[0];
+          this.vel[0] = 0;
+        }
       }
+    } else if (mode == GameMode.CRASHING) {
+      size *= 0.8;
       
-      if (horiz) {
-        this.pos[0] -= this.vel[0];
-        this.vel[0] = 0;
+      // Generate explosion particles
+      for (int i = 0; i < 10; i ++) {  
+        float vel = random(-2, 2);
+        float ang = random(0, (float)(2 * Math.PI));
+        particles.add(new Particle(pos[0], pos[1], (float)(Math.cos(ang) * vel), (float)(Math.sin(ang) * vel), 
+            new int[] {200, 200, 200}, 3, -10));
       }
+     
+      if (size < 0.05) mode = GameMode.PAUSE;
     }
   }
   
   void crash() {
+    mode = GameMode.CRASHING;
     if (DEBUG) println("CRASHED");
   }
   
   void land() {
+    mode = GameMode.LANDED;
     if (DEBUG) println("LANDED");
   }
   
@@ -165,8 +186,8 @@ class Module {
     for(int i = 0; i < vertices.length; i ++) {
       float[] rotated = posRotated(new float[] {vertices[i][0], vertices[i][1]});
       vertex(
-          (rotated[0] * scale + pos[0] - cameraPos[0] + width / 2),
-          (rotated[1] * scale + pos[1] - cameraPos[1] + height / 2));
+          (rotated[0] * scale * size + pos[0] - cameraPos[0] + width / 2),
+          (rotated[1] * scale * size + pos[1] - cameraPos[1] + height / 2));
     }
     endShape();
     
