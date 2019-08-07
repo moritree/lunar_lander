@@ -52,6 +52,11 @@ class Module {
     
     fuel -= Math.hypot(dx, dy) * thrustFuel;
     
+    for (int i = 0; i < (int) random(2, 5); i ++) {
+      float[] thrustPos = posRotated(new float[] {(collision[3][0] + collision[2][0])/2 + random(-10, 10), collision[3][1]});
+      particles.add(new Particle(thrustPos[0] + pos[0], thrustPos[1] + pos[1], vel[0], vel[1] + random(-0.4, 0.4), new int[] {255, 150, 150}, random(1, 3), -5));
+    }
+    
     vel[0] += dx;
     vel[1] -= dy;
   }
@@ -140,7 +145,7 @@ class Module {
         }
       }
     } else if (mode == GameMode.CRASHING) {
-      size *= 0.8;
+      size *= 0.85;
       
       // Generate explosion particles
       for (int i = 0; i < 10; i ++) {  
