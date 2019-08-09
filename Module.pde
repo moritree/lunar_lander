@@ -52,9 +52,12 @@ class Module {
     
     fuel -= Math.hypot(dx, dy) * thrustFuel;
     
-    for (int i = 0; i < (int) random(2, 5); i ++) {
-      float[] thrustPos = posRotated(new float[] {(collision[3][0] + collision[2][0])/2 + random(-10, 10), collision[3][1]});
-      particles.add(new Particle(thrustPos[0] + pos[0], thrustPos[1] + pos[1], vel[0], vel[1] + random(-0.4, 0.4), new int[] {255, 150, 150}, random(1, 3), -5));
+    for (int i = 0; i < (int) random(2, 20); i ++) {
+      float[] thrustPos = posRotated(new float[] {(collision[3][0] + collision[2][0])/2 + random(-8, 8), collision[3][1]});
+      float velX = vel[0];
+      float velY = vel[1] + random(-0.4, 0.4);
+      particles.add(new Particle(thrustPos[0] + pos[0], thrustPos[1] + pos[1], velX, velY, 
+          new int[] {(int)random(200, 255), (int)random(100, 220), (int)random(100, 150)}, random(1, 5), -3));
     }
     
     vel[0] += dx;
@@ -103,59 +106,58 @@ class Module {
       float[] TL = posRotated(collision[0]);
       float[] TM = posRotated(new float[] {(collision[0][0] + collision[1][0])/2, collision[0][1]});
       float[] TR = posRotated(collision[1]);
-      for (Terrain t : terrain) {
-        boolean collide = false;
-        boolean vert = false;
-        boolean horiz = false;
-        
-        if (t.isWithin(BM[0] + pos[0], BM[1] + pos[1]) || t.isWithin(TM[0] + pos[0], TM[1] + pos[1])) { 
-          if (DEBUG) println("Collision: Top/Bottom");
-          vert = true;
-          collide = true;
-        }
-        if (t.isWithin(ML[0] + pos[0], ML[1] + pos[1]) || t.isWithin(MR[0] + pos[0], MR[1] + pos[1])) { 
-          if (DEBUG) println("Collision: Left/Right");
-          horiz = true;
-          collide = true;
-        }
-        if (t.isWithin(BR[0] + pos[0], BR[1] + pos[1]) || t.isWithin(BL[0] + pos[0], BL[1] + pos[1])
-            || t.isWithin(TR[0] + pos[0], TR[1] + pos[1]) || t.isWithin(TL[0] + pos[0], TL[1] + pos[1])) { 
-          if (DEBUG) println("Collision: CORNER");
-          horiz = true;
-          vert = true;
-          collide = true;
-        }
-        
-        // Check whether this collision is a safe landing or crash
-        if (collide) { 
-          this.angVel = 0;
-          if (this.vel[1] < 10 && Math.abs(ang) < Math.PI / 8) {
-            land();
-          } else crash();
-        }
-        
-        if (vert) {
-          this.pos[1] -= this.vel[1];
-          this.vel[1] = 0;
-        }
-        
-        if (horiz) {
-          this.pos[0] -= this.vel[0];
-          this.vel[0] = 0;
-        }
+
+      boolean collide = false;
+      boolean vert = false;
+      boolean horiz = false;
+      
+      if (terrain.isWithin(BM[0] + pos[0], BM[1] + pos[1]) || terrain.isWithin(TM[0] + pos[0], TM[1] + pos[1])) { 
+        if (DEBUG) println("Collision: Top/Bottom");
+        vert = true;
+        collide = true;
       }
+      if (terrain.isWithin(ML[0] + pos[0], ML[1] + pos[1]) || terrain.isWithin(MR[0] + pos[0], MR[1] + pos[1])) { 
+        if (DEBUG) println("Collision: Left/Right");
+        horiz = true;
+        collide = true;
+      }
+      if (terrain.isWithin(BR[0] + pos[0], BR[1] + pos[1]) || terrain.isWithin(BL[0] + pos[0], BL[1] + pos[1])
+          || terrain.isWithin(TR[0] + pos[0], TR[1] + pos[1]) || terrain.isWithin(TL[0] + pos[0], TL[1] + pos[1])) { 
+        if (DEBUG) println("Collision: CORNER");
+        horiz = true;
+        vert = true;
+        collide = true;
+      }
+      
+      // Check whether this collision is a safe landing or crash
+      if (collide) { 
+        this.angVel = 0;
+        if (Math.abs(this.vel[1]) < 10 && Math.abs(this.vel[0]) < 5 && Math.abs(ang) < Math.PI / 8) {
+          land();
+        } else crash();
+      }
+      
+      if (vert) {
+        this.pos[1] -= this.vel[1];
+        this.vel[1] = 0;
+      }
+      
+      if (horiz) {
+        this.pos[0] -= this.vel[0];
+        this.vel[0] = 0;
+      }
+    
     } else if (mode == GameMode.CRASHING) {
-      size *= 0.85;
+      size *= 0.9;
       
       // Generate explosion particles
       for (int i = 0; i < 10; i ++) {  
         float vel = random(-2, 2);
         float ang = random(0, (float)(2 * Math.PI));
-        particles.add(new Particle(pos[0], pos[1], (float)(Math.cos(ang) * vel), (float)(Math.sin(ang) * vel), 
-            new int[] {200, 200, 200}, 3, -10));
+        particles.add(new Particle(pos[0], pos[1], (float)(Math.cos(ang) * vel), (float)(Math.sin(ang) * vel), new int[] {200, 200, 200}, 3, -10));
       }
      
-      if (size < 0.05) mode = GameMode.PAUSE;
+      if (size < 0.05) mode = GameMode.CRASHED;
     }
   }
   
@@ -191,8 +193,8 @@ class Module {
     for(int i = 0; i < vertices.length; i ++) {
       float[] rotated = posRotated(new float[] {vertices[i][0], vertices[i][1]});
       vertex(
-          (rotated[0] * scale * size + pos[0] - cameraPos[0] + width / 2),
-          (rotated[1] * scale * size + pos[1] - cameraPos[1] + height / 2));
+          (rotated[0] * size + pos[0] - cameraPos[0] + width / 2),
+          (rotated[1] * size + pos[1] - cameraPos[1] + height / 2));
     }
     endShape();
     
@@ -203,8 +205,8 @@ class Module {
       for(int i = 0; i < collision.length; i ++) {
         float[] rotated = posRotated(new float[] {collision[i][0], collision[i][1]});
         vertex(
-          (rotated[0] * scale + pos[0] - cameraPos[0] + width / 2),
-          (rotated[1] * scale + pos[1] - cameraPos[1] + height / 2));
+          (rotated[0] + pos[0] - cameraPos[0] + width / 2),
+          (rotated[1] + pos[1] - cameraPos[1] + height / 2));
       }
       endShape();
     }

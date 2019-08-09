@@ -4,13 +4,13 @@ import java.util.Arrays;
 
 final boolean DEBUG = false;
 
-float scale = 1;
 float gravity = 0.002;
 
 enum GameMode {
   PLAY,
   PAUSE,
   CRASHING,
+  CRASHED,
   LANDED
 }
 GameMode mode = GameMode.PLAY;
@@ -19,8 +19,10 @@ float[] cameraPos = {0, 0};
 
 Module module = new Module(0, 0);
 ArrayList<float[]> stars = new ArrayList();
-ArrayList<Terrain> terrain = new ArrayList();
 ArrayList<Particle> particles = new ArrayList();
+
+Terrain terrain;
+int widthRounded;
 
 void setup() {
   size(1024, 768);
@@ -31,14 +33,7 @@ void setup() {
     stars.add(new float[] {random(width), random(height)});
   }
   
-  // Generate terrain
-  terrain.add(new TerrainRect(-500, 60, 1000, 500, 100));
-  
-  terrain.add(new TerrainTri(-60, 60, -60, 0, -30, 60, 100));
-  terrain.add(new TerrainRect(-200, 0, 140, 60, 100));
-  terrain.add(new TerrainTri(-200, 60, -200, -30, -300, 60, 100));
-  terrain.add(new TerrainTri(-200, 0, -200, -30, -150, 0, 100));
-  
+  terrain = new Terrain();
 }
 
 /**
@@ -54,11 +49,7 @@ void draw() {
   }
   
   // Terrain
-  for (Terrain t : terrain) t.render();
-  
-  // Module
-  module.update();
-  module.render();
+  terrain.render();
   
   // Particle effects
   ArrayList<Particle> remove = new ArrayList();
@@ -67,17 +58,33 @@ void draw() {
     p.render();
     if (p.alpha <= 0) remove.add(p);
   }
-  
   for (Particle r : remove) particles.remove(r);
+  
+  // Module
+  module.update();
+  module.render();
   
   // Update camera position
   cameraPos = module.pos;
  
   // Information
   fill(255);
-  text("FUEL: " + module.fuel, 10, 20);
-  text("Velocity (x): " + (int)(module.vel[0]*50), 10, 40);
-  text("Velocity (y): " + (int)(-module.vel[1]*50), 10, 60);
+  if (mode == GameMode.PLAY) {
+    textSize(12);
+    text("FUEL: " + module.fuel, 10, 20);
+    text("REL. ALT: " + (int)(terrain.getHeight(module.pos[0]) - module.pos[1])/4, 10, 40);
+    text("VEL (x): " + (int)(module.vel[0]*50), 10, 60);
+    text("VEL (y): " + (int)(-module.vel[1]*50), 10, 80);
+  } else if (mode == GameMode.LANDED) {
+    textSize(48);
+    text("LANDED", 10, 46);
+  } else if (mode == GameMode.CRASHING) {
+    textSize(48);
+    text("CRASHING", 10, 46);
+  } else if (mode == GameMode.CRASHED) {
+    textSize(48);
+    text("CRASHED", 10, 46);
+  }
 }
 
 /**

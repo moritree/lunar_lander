@@ -14,8 +14,6 @@ class Particle {
     col = rgb;
     size = isize;
     alphaChange = ialphaChange;
-    
-    if (DEBUG) println("Particle instantiated");
   }
   
   void update() {
@@ -27,6 +25,6 @@ class Particle {
   void render() {
     noStroke();
     fill(col[0], col[1], col[2], alpha);
-    circle(pos[0] * scale - cameraPos[0] + width / 2, pos[1] * scale - cameraPos[1] + height / 2, size);
+    circle(pos[0] - cameraPos[0]  + width / 2, pos[1] - cameraPos[1]+ height / 2, size);
   }
 }
