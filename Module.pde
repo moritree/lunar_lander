@@ -5,7 +5,8 @@ class Module {
   int timer = 0;
   
   // Initial fuel amount
-  int fuel = 200;
+  int initialFuel = 200;
+  int fuel = initialFuel;
   
   // Fuel consumption per unit of change in angular velocity / linear velocity
   final float turnFuel = 500;
@@ -27,15 +28,15 @@ class Module {
   final float thrustForce = 0.1;
   
   // Defines the shape of the module
-    float[][] vertices = 
-      {{-10, -10}, {10, -10}, {15, 0}, {10, 10}, 
-      {15, 10}, {20, 20}, {18, 20}, {14, 14}, 
-      {8, 14}, {12, 20}, {-12, 20}, {-8, 14},
-      {-14, 14}, {-18, 20}, {-20, 20}, {-15, 10}, 
-      {-10, 10}, {-15, 0}};
-      
-    // Collision box
-    float[][] collision = {{-20, -10}, {20, -10}, {20, 20}, {-20, 20}};
+  float[][] vertices = 
+    {{-10, -10}, {10, -10}, {15, 0}, {10, 10}, 
+    {15, 10}, {20, 20}, {18, 20}, {14, 14}, 
+    {8, 14}, {12, 20}, {-12, 20}, {-8, 14},
+    {-14, 14}, {-18, 20}, {-20, 20}, {-15, 10}, 
+    {-10, 10}, {-15, 0}};
+    
+  // Collision box
+  float[][] collision = {{-20, -10}, {20, -10}, {20, 20}, {-20, 20}};
   
   Module(float x, float y) {
     this.pos = new float[] {x, y};

@@ -95,5 +95,16 @@ void keyPressed() {
     if (key == 'a') module.turn(-1);
     if (key == 'd') module.turn(1);
     if (key == 'w') module.thrust();
+    if (key == 's') {
+      if (module.angVel > 0) module.turn(-1);
+      else if (module.angVel < 0) module.turn(1);
+    }
   }
+}
+
+
+void reset(boolean resetFuel) {
+  module.pos = new float[] {0, 0};
+  terrain = new Terrain();
+  if (resetFuel) module.fuel = module.initialFuel;
 }
